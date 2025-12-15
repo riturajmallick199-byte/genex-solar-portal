@@ -9,69 +9,75 @@ export default function Home() {
 
   const [ahjs, setAhjs] = useState([]);
   const [utilities, setUtilities] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     async function loadData() {
       try {
-        // STATS
+        // Load stats
         const statsRes = await fetch("/api/stats");
         if (statsRes.ok) {
           const statsData = await statsRes.json();
           setStats(statsData);
         }
 
-        // AHJs
+        // Load AHJs
         const ahjRes = await fetch("/api/ahjs");
         if (ahjRes.ok) {
           const ahjData = await ahjRes.json();
-          setAhjs(ahjData.data || []);
+          setAhjs(Array.isArray(ahjData.data) ? ahjData.data : []);
         }
 
-        // UTILITIES
+        // Load Utilities
         const utilRes = await fetch("/api/utilities");
         if (utilRes.ok) {
           const utilData = await utilRes.json();
-          setUtilities(utilData.data || []);
+          setUtilities(Array.isArray(utilData.data) ? utilData.data : []);
         }
       } catch (err) {
+        setError("Failed to load data. Please try again.");
         console.error(err);
-        setError("API not connected yet. Showing demo structure.");
+      } finally {
+        setLoading(false);
       }
     }
 
     loadData();
   }, []);
 
+  if (loading) {
+    return (
+      <main style={styles.center}>
+        <h2>Loading Genex Solar Portal…</h2>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main style={styles.center}>
+        <h2 style={{ color: "red" }}>{error}</h2>
+      </main>
+    );
+  }
+
   return (
-    <main style={{ padding: "40px", fontFamily: "Arial, sans-serif" }}>
+    <main style={styles.container}>
       <h1>⚡ Genex Solar Portal</h1>
       <p>AHJ & Utility Solar Permit Intelligence Platform</p>
 
-      {error && (
-        <p style={{ color: "orange", marginTop: "10px" }}>
-          ⚠ {error}
-        </p>
-      )}
-
       {/* STATS */}
-      <div
-        style={{
-          display: "flex",
-          gap: "30px",
-          margin: "30px 0",
-          fontWeight: "bold",
-        }}
-      >
-        <div>🏛 AHJs: {stats.total_ahjs}</div>
-        <div>⚡ Utilities: {stats.total_utilities}</div>
-        <div>📍 States: {stats.states_covered}</div>
+      <div style={styles.stats}>
+        <div>🏛 AHJs: <strong>{stats.total_ahjs}</strong></div>
+        <div>⚡ Utilities: <strong>{stats.total_utilities}</strong></div>
+        <div>📍 States: <strong>{stats.states_covered}</strong></div>
       </div>
 
       {/* AHJ TABLE */}
       <h2>🏛 AHJ Database</h2>
-      <table border="1" cellPadding="10" cellSpacing="0" width="100%">
-        <thead style={{ background: "#f5f5f5" }}>
+      <table style={styles.table}>
+        <thead>
           <tr>
             <th>City</th>
             <th>State</th>
@@ -81,9 +87,7 @@ export default function Home() {
         <tbody>
           {ahjs.length === 0 ? (
             <tr>
-              <td colSpan="3" align="center">
-                No AHJ data loaded yet
-              </td>
+              <td colSpan="3" style={styles.empty}>No AHJ data available</td>
             </tr>
           ) : (
             ahjs.map((a, i) => (
@@ -99,8 +103,8 @@ export default function Home() {
 
       {/* UTILITIES TABLE */}
       <h2 style={{ marginTop: "40px" }}>⚡ Utility Interconnections</h2>
-      <table border="1" cellPadding="10" cellSpacing="0" width="100%">
-        <thead style={{ background: "#f5f5f5" }}>
+      <table style={styles.table}>
+        <thead>
           <tr>
             <th>Utility</th>
             <th>State</th>
@@ -110,9 +114,7 @@ export default function Home() {
         <tbody>
           {utilities.length === 0 ? (
             <tr>
-              <td colSpan="3" align="center">
-                No Utility data loaded yet
-              </td>
+              <td colSpan="3" style={styles.empty}>No utility data available</td>
             </tr>
           ) : (
             utilities.map((u, i) => (
@@ -128,3 +130,34 @@ export default function Home() {
     </main>
   );
 }
+
+/* ---------- Styles ---------- */
+
+const styles = {
+  container: {
+    padding: "40px",
+    fontFamily: "Arial, sans-serif",
+  },
+  center: {
+    height: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    fontFamily: "Arial, sans-serif",
+  },
+  stats: {
+    display: "flex",
+    gap: "20px",
+    margin: "30px 0",
+    fontSize: "16px",
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+  },
+  empty: {
+    textAlign: "center",
+    padding: "20px",
+    color: "#777",
+  },
+};
